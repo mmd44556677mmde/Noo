@@ -48,15 +48,19 @@ class VideoThumbnailFetcher(
     private val file: File,
     private val options: Options,
     private val diskCache: DiskCache?,
+    private val isPhoto: Boolean,
 ) : Fetcher {
 
+    private val tileWidth = (options.size.width as? coil.size.Dimension.Pixels)?.px ?: THUMBNAIL_MAX_SIDE_PX
+    private val tileHeight = (options.size.height as? coil.size.Dimension.Pixels)?.px ?: THUMBNAIL_MAX_SIDE_PX
+
     override suspend fun fetch(): FetchResult {
-        val key = "video-thumbnail:${file.path}:${file.lastModified()}:${file.length()}"
+        val key = "tile-v2:$tileWidth:$tileHeight:${file.path}:${file.lastModified()}:${file.length()}"
         readCached(key)?.let { return it }
 
         return decodePermits.withPermit {
             // Another request for the same video may have stored it while this one waited.
-            readCached(key) ?: extractFrame().let { frame -> store(key, frame) ?: frame.asResult() }
+            readCached(key) ?: (if (isPhoto) extractPhoto() else extractFrame()).let { frame -> store(key, frame) ?: frame.asResult() }
         }
     }
 
@@ -85,6 +89,17 @@ class VideoThumbnailFetcher(
         return readCached(key)
     }
 
+    private fun extractPhoto(): Bitmap {
+        val opts = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        android.graphics.BitmapFactory.decodeFile(file.path, opts)
+        require(opts.outWidth > 0 && opts.outHeight > 0)
+        var sample = 1
+        while (opts.outWidth / sample > tileWidth * 2 || opts.outHeight / sample > tileHeight * 2) sample *= 2
+        opts.inSampleSize = sample
+        opts.inJustDecodeBounds = false
+        return checkNotNull(android.graphics.BitmapFactory.decodeFile(file.path, opts)).scaledDown()
+    }
+
     private fun extractFrame(): Bitmap {
         val retriever = MediaMetadataRetriever()
         try {
@@ -92,13 +107,13 @@ class VideoThumbnailFetcher(
             val option = MediaMetadataRetriever.OPTION_CLOSEST_SYNC
             val width = retriever.extractInt(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
             val height = retriever.extractInt(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
-            val isLarger = max(width, height) > THUMBNAIL_MAX_SIDE_PX
+            val isLarger = width > tileWidth || height > tileHeight
             val frame = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 && isLarger) {
                 // Square bounds: the frame keeps its aspect ratio inside them, and the reported
                 // width and height ignore rotation, so a portrait clip would not fit theirs.
-                retriever.getScaledFrameAtTime(0L, option, THUMBNAIL_MAX_SIDE_PX, THUMBNAIL_MAX_SIDE_PX)
+                retriever.getScaledFrameAtTime(0L, option, tileWidth, tileHeight)
             } else {
-                retriever.getFrameAtTime(0L, option)?.scaledDown()
+                if (isLarger) null else retriever.getFrameAtTime(0L, option)
             }
             return checkNotNull(frame) { "No frame could be extracted from ${file.path}" }
         } finally {
@@ -107,7 +122,7 @@ class VideoThumbnailFetcher(
     }
 
     private fun Bitmap.scaledDown(): Bitmap {
-        val scale = THUMBNAIL_MAX_SIDE_PX.toFloat() / max(width, height)
+        val scale = minOf(tileWidth.toFloat() / width, tileHeight.toFloat() / height)
         if (scale >= 1f) return this
         return Bitmap.createScaledBitmap(this, (width * scale).roundToInt(), (height * scale).roundToInt(), true)
     }
@@ -127,8 +142,9 @@ class VideoThumbnailFetcher(
             val mimeType = MimeTypeMap.getSingleton()
                 .getMimeTypeFromExtension(data.extension.lowercase())
             // Anything else falls through to Coil's own file fetcher.
-            if (mimeType?.startsWith("video/") != true) return null
-            return VideoThumbnailFetcher(data, options, imageLoader.diskCache)
+            val photo = mimeType?.startsWith("video/") != true
+            if (photo && options.parameters.value<Boolean>("tile") != true) return null
+            return VideoThumbnailFetcher(data, options, imageLoader.diskCache, photo)
         }
     }
 }

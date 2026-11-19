@@ -70,7 +70,7 @@ fun MediaThumbnail(
 ) {
     val context = LocalContext.current
     val remote = path.startsWith("https://", true) || path.startsWith("http://", true)
-    val cached = remember(path) { if (remote) DumpMedia.file(context, path) else File(path) }
+    val cached = remember(path) { if (remote) DumpMedia.file(context, path) else File(path.removePrefix("file://")) }
     var ready by remember(path) { mutableStateOf(cached.isFile) }
     var busy by remember(path) { mutableStateOf(false) }
     var ask by remember(path) { mutableStateOf(false) }
@@ -95,7 +95,7 @@ fun MediaThumbnail(
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
             .clickable {
                 when {
-                    !remote || ready || type != AttachmentType.PHOTO -> onClick()
+                    !remote || ready || type !in setOf(AttachmentType.PHOTO, AttachmentType.GRAFFITI, AttachmentType.STICKER) -> onClick()
                     busy -> Unit
                     DumpMedia.policy(context) == DumpMedia.Policy.ASK -> ask = true
                     else -> fetch(false)
@@ -120,7 +120,7 @@ fun MediaThumbnail(
                 if (remote && !ready && !busy && !failed) AttachmentPlaceholder(type, caption, Modifier.matchParentSize())
                 if (!remote || ready)
                 AsyncImage(
-                    model = cached,
+                    model = remember(cached) { ImageRequest.Builder(context).data(cached).setParameter("tile", true).build() },
                     contentDescription = null,
                     // Stickers are transparent artwork sized to their own aspect ratio; cropping
                     // them to a square tile cuts the drawing.

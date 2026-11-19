@@ -59,16 +59,21 @@ fun VideoPlayer(uri: String, modifier: Modifier = Modifier, autoPlay: Boolean = 
         val ask = com.etozhesandy.redpanda.core.common.net.DumpMedia.policy(context) == com.etozhesandy.redpanda.core.common.net.DumpMedia.Policy.ASK
         var downloading by remember(uri) { mutableStateOf(!ask) }
         var percent by remember(uri) { mutableIntStateOf(-1) }
+        val stream = remember(uri) { GrowingVideo(File(context.cacheDir, "videos/" + com.etozhesandy.redpanda.core.common.net.DumpMedia.file(context, uri).name)) }
+        DisposableEffect(stream) { onDispose { stream.closed = true } }
+        var started by remember(uri) { mutableStateOf(false) }
         var file by remember(uri) { mutableStateOf<File?>(null) }
         var error by remember(uri) { mutableStateOf(false) }
         LaunchedEffect(uri, downloading) {
             if (downloading) try {
-                file = transfers.downloadVideo(uri, ask) { bytes, total -> percent = if (total > 0) (bytes * 100 / total).toInt() else -1 }
+                file = transfers.downloadVideo(uri, ask) { bytes, total -> stream.total = total; started = true; percent = if (total > 0) (bytes * 100 / total).toInt() else -1 }
+                stream.complete = true
             } catch (e: java.io.IOException) { downloading = false; error = true }
         }
         val local = file
-        if (local != null) VideoPlayer(local.absolutePath, modifier, true)
-        else Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            if (local != null || started) LocalVideoPlayer(stream.file.absolutePath, Modifier.fillMaxSize(), true, stream)
+            if (local == null)
             androidx.compose.foundation.layout.Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 if (downloading) androidx.compose.material3.CircularProgressIndicator()
                 if (percent >= 0) androidx.compose.material3.Text("$percent%", color = Color.White)
@@ -79,8 +84,16 @@ fun VideoPlayer(uri: String, modifier: Modifier = Modifier, autoPlay: Boolean = 
         }
         return
     }
-    val player = remember(uri) {
-        ExoPlayer.Builder(context)
+    LocalVideoPlayer(uri, modifier, autoPlay, null)
+}
+
+@Composable
+private fun LocalVideoPlayer(uri: String, modifier: Modifier, autoPlay: Boolean, stream: GrowingVideo?) {
+    val context = LocalContext.current
+    val player = remember(uri, stream) {
+        ExoPlayer.Builder(context).apply {
+            if (stream != null) setMediaSourceFactory(androidx.media3.exoplayer.source.ProgressiveMediaSource.Factory { GrowingVideoSource(stream) })
+        }
             .setSeekBackIncrementMs(SEEK_STEP_MS)
             .setSeekForwardIncrementMs(SEEK_STEP_MS)
             .build()
@@ -139,7 +152,7 @@ fun VideoPlayer(uri: String, modifier: Modifier = Modifier, autoPlay: Boolean = 
             player = player,
             shutter = {
                 AsyncImage(
-                    model = if (uri.startsWith("http")) uri else File(uri),
+                    model = if (stream == null) File(uri) else null,
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize().background(Color.Black),

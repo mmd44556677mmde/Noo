@@ -73,7 +73,7 @@ class RedPandaApplication : Application(), Configuration.Provider, ImageLoaderFa
 
     override fun newImageLoader(): ImageLoader =
         ImageLoader.Builder(this)
-            .okHttpClient { com.etozhesandy.redpanda.core.common.net.DumpMedia.client(this) }
+            .callFactory { okhttp3.Call.Factory { throw java.io.IOException("Only tapped media may be fetched") } }
             // The fetcher serves local videos a cached still; the decoder remains for the rest.
             // Animated images play in place of their first frame: the platform decoder from Android 9
             // (it also plays animated WebP), a software one below that.
