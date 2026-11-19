@@ -93,6 +93,7 @@ class SettingsViewModel @Inject constructor(
 
     override fun onEvent(event: SettingsState.Event) {
         when (event) {
+            SettingsState.Event.StorageClicked -> nav.navigate(Routes.StorageUsage)
             is SettingsState.Event.PolicyChanged -> { com.etozhesandy.redpanda.core.common.net.DumpMedia.setPolicy(context,event.policy); setState { copy(policy = event.policy) } }
             is SettingsState.Event.CoilCacheSizeChanged -> launchSafe { updateCoilCacheSize(event.valueMb) }
             is SettingsState.Event.MediaImageWidthChanged -> launchSafe { updateMediaImageWidth(event.widthDp) }

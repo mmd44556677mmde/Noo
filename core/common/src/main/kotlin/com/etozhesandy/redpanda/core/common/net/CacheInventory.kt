@@ -4,6 +4,7 @@ import android.content.Context
 import java.io.File
 
 interface CacheHost {
+    fun attachmentKind(url: String): String?
     fun owner(url: String): List<String?>
     fun clearThumbnails()
     fun thumbnailBytes(): Long

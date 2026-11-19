@@ -35,6 +35,7 @@ object SettingsState {
     ) : UiState
 
     sealed interface Event : UiEvent {
+        data object StorageClicked : Event
         data class PolicyChanged(val policy: com.etozhesandy.redpanda.core.common.net.DumpMedia.Policy) : Event
         data class CoilCacheSizeChanged(val valueMb: Int) : Event
         data class MediaImageWidthChanged(val widthDp: Int) : Event

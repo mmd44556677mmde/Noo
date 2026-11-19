@@ -28,7 +28,8 @@ class AudioHandler @Inject constructor(
     fun request(scope: CoroutineScope, attachment: Attachment) {
         if (!requested.add(attachment.id)) return
         scope.launch {
-            val audio = prepareAudio(attachment) ?: return@launch
+            val audio = try { prepareAudio(attachment) } finally { requested.remove(attachment.id) }
+            if (audio == null) return@launch
             _prepared.update { it + (attachment.id to audio) }
         }
     }

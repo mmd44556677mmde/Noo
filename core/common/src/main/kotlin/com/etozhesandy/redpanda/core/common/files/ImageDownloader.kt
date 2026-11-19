@@ -80,12 +80,18 @@ class ImageDownloader @Inject constructor(
      * come from the archive, and an archive that names `…/databases/redpanda.db` would otherwise
      * have this copy the user's whole message history somewhere every other app can read it.
      */
-    private fun openSource(source: String): InputStream = when {
-        UrlGuard.isWebUrl(source) -> com.etozhesandy.redpanda.core.common.net.DumpMedia.client(context)
-            .newCall(okhttp3.Request.Builder().url(source).build()).execute().let { response ->
-                if (!response.isSuccessful) { response.close(); throw java.io.IOException("Download failed") }
-                response.body.byteStream()
+    private suspend fun openSource(source: String): InputStream = when {
+        UrlGuard.isWebUrl(source) -> {
+            val host = context.applicationContext as com.etozhesandy.redpanda.core.common.net.CacheHost
+            val key = com.etozhesandy.redpanda.core.common.net.DumpMedia.file(context,source)
+            val confirmed = com.etozhesandy.redpanda.core.common.net.DumpMedia.takeApproval(source)
+            val cached = when (host.attachmentKind(source)) {
+                "VIDEO" -> File(context.cacheDir,"videos/${key.name}").also { if (!host.videoComplete(it.name) || !it.isFile) throw java.io.IOException("Finish downloading the video in the player first") }
+                "FILE" -> { com.etozhesandy.redpanda.core.common.net.DumpMedia.fetchPhoto(context,source,confirmed,true); File(context.cacheDir,"documents/${key.name}") }
+                else -> { com.etozhesandy.redpanda.core.common.net.DumpMedia.fetchPhoto(context,source,confirmed); key }
             }
+            cached.inputStream()
+        }
         else -> {
             val path = source.removePrefix("file://")
             val file = File(path)

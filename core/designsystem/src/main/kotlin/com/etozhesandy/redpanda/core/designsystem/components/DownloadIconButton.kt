@@ -37,7 +37,7 @@ fun DownloadIconButton(source: String?, onDownload: (String) -> Unit) {
     }
 
     IconButton(
-        onClick = {
+        onClick = withRemoteConsent(source) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
                 pendingSource = source
                 permissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)

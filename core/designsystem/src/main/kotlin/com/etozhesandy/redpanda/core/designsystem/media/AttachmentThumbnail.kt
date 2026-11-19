@@ -70,7 +70,7 @@ fun MediaThumbnail(
 ) {
     val context = LocalContext.current
     val remote = path.startsWith("https://", true) || path.startsWith("http://", true)
-    val cached = remember(path) { if (remote) DumpMedia.file(context, path) else File(path.removePrefix("file://")) }
+    val cached = remember(path) { if (remote) DumpMedia.file(context, path).let { if (type == AttachmentType.VIDEO) File(context.cacheDir,"videos/${it.name}") else it } else File(path.removePrefix("file://")) }
     var ready by remember(path) { mutableStateOf(cached.isFile) }
     var busy by remember(path) { mutableStateOf(false) }
     var ask by remember(path) { mutableStateOf(false) }
@@ -120,7 +120,7 @@ fun MediaThumbnail(
                 if (remote && !ready && !busy && !failed) AttachmentPlaceholder(type, caption, Modifier.matchParentSize())
                 if (!remote || ready)
                 AsyncImage(
-                    model = remember(cached) { ImageRequest.Builder(context).data(cached).setParameter("tile", true).build() },
+                    model = remember(cached) { ImageRequest.Builder(context).data(cached).setParameter("tile", true).setParameter("videoTile", type == AttachmentType.VIDEO).build() },
                     contentDescription = null,
                     // Stickers are transparent artwork sized to their own aspect ratio; cropping
                     // them to a square tile cuts the drawing.

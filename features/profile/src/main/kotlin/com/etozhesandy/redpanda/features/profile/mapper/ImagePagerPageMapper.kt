@@ -15,5 +15,5 @@ fun List<Attachment>.toPages(): List<ImagePagerState.Page> {
     val anchors = filter { it.messageId != null && it.dialogId.isNotBlank() && it.path.isNotBlank() }
         // Blank paths are excluded above: they are not one file, and would all collide on one key.
         .associate { it.path to ImagePagerState.MessageAnchor(it.dialogId, it.profileId, it.messageId!!) }
-    return map { ImagePagerState.Page(url = it.path, anchor = anchors[it.path]) }
+    return map { ImagePagerState.Page(url = it.path, anchor = anchors[it.path], video = it.type == com.etozhesandy.redpanda.core.model.AttachmentType.VIDEO) }
 }

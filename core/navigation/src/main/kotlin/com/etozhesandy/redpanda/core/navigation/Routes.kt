@@ -12,6 +12,9 @@ object Routes {
     data object Import
 
     @Serializable
+    data object StorageUsage
+
+    @Serializable
     data object Settings
 
     @Serializable

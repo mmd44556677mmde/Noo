@@ -43,7 +43,8 @@ fun ImagePagerScreen(
                 onEvent(ImagePagerState.Event.DownloadClicked(url))
             }
         },
-    ) { page, _, zoom ->
+    ) { page, current, zoom ->
+        if (page.video) com.etozhesandy.redpanda.core.designsystem.media.VideoPlayer(page.url, autoPlay = current) else
         MediaImage(model = page.url, zoom = zoom)
     }
 }

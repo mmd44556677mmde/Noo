@@ -69,7 +69,7 @@ class VideoThumbnailFetcher(
         val snapshot = cache.openSnapshot(key) ?: return null
         return SourceResult(
             source = ImageSource(snapshot.data, cache.fileSystem, key, snapshot),
-            mimeType = THUMBNAIL_MIME_TYPE,
+            mimeType = if (isPhoto) "image/png" else THUMBNAIL_MIME_TYPE,
             dataSource = DataSource.DISK,
         )
     }
@@ -79,7 +79,7 @@ class VideoThumbnailFetcher(
         val editor = cache.openEditor(key) ?: return null
         try {
             cache.fileSystem.write(editor.data) {
-                frame.compress(Bitmap.CompressFormat.JPEG, THUMBNAIL_JPEG_QUALITY, outputStream())
+                frame.compress(if (isPhoto) Bitmap.CompressFormat.PNG else Bitmap.CompressFormat.JPEG, THUMBNAIL_JPEG_QUALITY, outputStream())
             }
             editor.commit()
         } catch (_: Exception) {
@@ -124,7 +124,7 @@ class VideoThumbnailFetcher(
     private fun Bitmap.scaledDown(): Bitmap {
         val scale = minOf(tileWidth.toFloat() / width, tileHeight.toFloat() / height)
         if (scale >= 1f) return this
-        return Bitmap.createScaledBitmap(this, (width * scale).roundToInt(), (height * scale).roundToInt(), true)
+        return Bitmap.createScaledBitmap(this, (width * scale).roundToInt().coerceAtLeast(1), (height * scale).roundToInt().coerceAtLeast(1), true)
     }
 
     private fun MediaMetadataRetriever.extractInt(keyCode: Int): Int =
@@ -142,7 +142,7 @@ class VideoThumbnailFetcher(
             val mimeType = MimeTypeMap.getSingleton()
                 .getMimeTypeFromExtension(data.extension.lowercase())
             // Anything else falls through to Coil's own file fetcher.
-            val photo = mimeType?.startsWith("video/") != true
+            val photo = mimeType?.startsWith("video/") != true && options.parameters.value<Boolean>("videoTile") != true
             if (photo && options.parameters.value<Boolean>("tile") != true) return null
             return VideoThumbnailFetcher(data, options, imageLoader.diskCache, photo)
         }

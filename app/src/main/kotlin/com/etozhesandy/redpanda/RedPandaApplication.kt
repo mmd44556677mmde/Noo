@@ -29,6 +29,7 @@ import kotlinx.coroutines.runBlocking
 @HiltAndroidApp
 class RedPandaApplication : Application(), Configuration.Provider, ImageLoaderFactory, com.etozhesandy.redpanda.core.common.net.VideoTransfers, com.etozhesandy.redpanda.core.common.net.CacheHost {
     @Inject lateinit var db: com.etozhesandy.redpanda.core.storage.db.AppDatabase
+    override fun attachmentKind(url: String) = db.videoTransferDao().attachmentKind(url)
     override fun owner(url: String) = db.videoTransferDao().owner(url).let { listOf(it?.profile, it?.chat, it?.kind) }
     override fun clearThumbnails() { imageLoader.diskCache?.clear(); imageLoader.memoryCache?.clear() }
     override fun thumbnailBytes() = imageLoader.diskCache?.size ?: 0L

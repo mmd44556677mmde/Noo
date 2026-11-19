@@ -41,10 +41,10 @@ class AudioRepositoryImpl @Inject constructor(
     private val cacheDir: File by lazy { File(context.cacheDir, CACHE_DIR_NAME).apply { mkdirs() } }
 
     override suspend fun prepare(path: String): PreparedAudio? {
-        prepared[path]?.let { return it.getOrNull() }
+
         return withContext(ioDispatcher) {
             permits.withPermit {
-                prepared.getOrPut(path) { runCatching { prepareNow(path) } }.getOrNull()
+                runCatching { prepareNow(path) }.getOrNull()
             }
         }
     }
@@ -58,7 +58,7 @@ class AudioRepositoryImpl @Inject constructor(
         val target = File(cacheDir, sha1(url) + "." + url.substringAfterLast('.').substringBefore('?').take(4))
         if (target.length() > 0) return target
 
-        val request = okhttp3.Request.Builder().url(url).build()
+        val request = okhttp3.Request.Builder().url(url).tag(if (com.etozhesandy.redpanda.core.common.net.DumpMedia.takeApproval(url)) "confirmed" else null).build()
         com.etozhesandy.redpanda.core.common.net.DumpMedia.client(context).newCall(request).execute().use { response ->
             check(response.isSuccessful)
             val partial = File.createTempFile("audio-", ".part", cacheDir)

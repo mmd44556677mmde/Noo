@@ -20,7 +20,7 @@ object ImagePagerState {
      * [anchor] is null when nothing links the image back to a conversation: a saved photo never
      * was in one, and VK's flat gallery export carries no message of its own.
      */
-    data class Page(val url: String, val anchor: MessageAnchor? = null)
+    data class Page(val url: String, val anchor: MessageAnchor? = null, val video: Boolean = false)
 
     data class State(
         val pages: List<Page> = emptyList(),

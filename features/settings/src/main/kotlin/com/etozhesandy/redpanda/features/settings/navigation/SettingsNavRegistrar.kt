@@ -14,6 +14,7 @@ import javax.inject.Inject
 class SettingsNavRegistrar @Inject constructor() : NavRegistrar {
 
     override fun register(builder: NavGraphBuilder) {
+        builder.composable<Routes.StorageUsage> { com.etozhesandy.redpanda.features.settings.presentation.StorageUsage(hiltViewModel()) }
         builder.composable<Routes.Settings> {
             val viewModel: SettingsViewModel = hiltViewModel()
             val state by viewModel.state.collectAsStateWithLifecycle()

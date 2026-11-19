@@ -49,16 +49,17 @@ fun AudioListItem(
     progress: AudioProgress? = null,
     onSeek: (positionMs: Long) -> Unit = {},
 ) {
+    val play = com.etozhesandy.redpanda.core.designsystem.components.withRemoteConsent(attachment.path,onClick)
     val isPlayable = attachment.path.isNotBlank()
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .then(if (isPlayable) Modifier.clickable(onClick = onClick) else Modifier)
+            .then(if (isPlayable) Modifier.clickable(onClick = play) else Modifier)
             .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (isPlayable) {
-            IconButton(onClick = onClick) {
+            IconButton(onClick = play) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                     contentDescription = stringResource(
