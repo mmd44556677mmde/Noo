@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shown instead of the app while its database is migrated to a new version. -->
+    <string name="database_update_title">Updating the database…</string>
+    <string name="database_update_hint">The app was updated and its data is being converted to the new format. For a large archive this can take a few minutes — please keep the app open.</string>
+
+    <!-- Clears the text of a search field. -->
+    <string name="search_clear">Clear</string>
+
+    <!-- Attachment kinds, shown on tiles that have no thumbnail of their own. -->
+    <string name="attachment_load_failed">Failed to load</string>
+    <string name="attachment_bookmarked">Bookmark</string>
+    <string name="attachment_type_photo">Photo</string>
+    <string name="attachment_type_video">Video</string>
+    <string name="attachment_type_file">Document</string>
+    <string name="attachment_type_audio">Audio</string>
+    <string name="attachment_type_sticker">Sticker</string>
+    <string name="attachment_type_graffiti">Graffiti</string>
+    <string name="attachment_type_link">Link</string>
+    <string name="attachment_type_wall">Wall post</string>
+    <string name="attachment_type_call">Call</string>
+    <string name="attachment_type_other">Attachment</string>
+
+    <!-- Shown in a viewer when an attachment has nothing openable behind it. -->
+    <string name="attachment_unavailable">Attachment unavailable</string>
+
+    <!-- Toolbar controls shared by every screen. -->
+    <string name="action_back">Back</string>
+    <string name="action_download">Save to phone</string>
+    <string name="action_go_to_message">Go to the message</string>
+
+    <!-- Outcome of saving media from a viewer; the argument is the folder under Download/. -->
+    <string name="download_saved_to">Saved to Download/%1$s</string>
+    <string name="download_failed">Couldn\'t save</string>
+
+    <!-- Playback controls over a video in a viewer. -->
+    <string name="action_play">Play</string>
+    <string name="action_pause">Pause</string>
+    <string name="video_seek_back">−%1$d s</string>
+    <string name="video_seek_forward">+%1$d s</string>
+
+    <!-- Sort menu: the control itself and the direction it currently sorts in. -->
+    <string name="action_sort">Sort</string>
+    <string name="action_sort_ascending">Sort, ascending</string>
+    <string name="action_sort_descending">Sort, descending</string>
+    <string name="sort_direction_ascending">Ascending</string>
+    <string name="sort_direction_descending">Descending</string>
+
+    <!-- Sort keys, shared by the sorting screens and by the settings screen picking their defaults. -->
+    <string name="sort_option_date">By date</string>
+    <string name="sort_option_name">By name</string>
+    <string name="sort_option_message_count">By message count</string>
+    <string name="sort_option_sender">By sender</string>
+    <string name="sort_option_title">By title</string>
+    <string name="import_banner_progress">Importing: %1$d of %2$d dialogs</string>
+    <string name="import_banner_indeterminate">Importing…</string>
+</resources>

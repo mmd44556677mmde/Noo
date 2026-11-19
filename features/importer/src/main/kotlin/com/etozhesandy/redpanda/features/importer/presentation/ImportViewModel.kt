@@ -1,0 +1,48 @@
+package com.etozhesandy.redpanda.features.importer.presentation
+
+import com.etozhesandy.redpanda.features.importer.domain.usecase.ObserveImportRunningUseCase
+import com.etozhesandy.redpanda.features.importer.domain.usecase.EnqueueProfileImportUseCase
+import com.etozhesandy.redpanda.core.common.mvi.BaseViewModel
+import com.etozhesandy.redpanda.core.navigation.Routes
+import com.etozhesandy.redpanda.core.navigation.manager.INavigationManager
+import com.etozhesandy.redpanda.core.navigation.manager.PopUpTo
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.UUID
+import javax.inject.Inject
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+
+@HiltViewModel
+class ImportViewModel @Inject constructor(
+    private val nav: INavigationManager,
+    private val enqueueImport: EnqueueProfileImportUseCase,
+    observeImportRunning: ObserveImportRunningUseCase,
+) : BaseViewModel<ImportState.State, ImportState.Event, ImportState.Effect>() {
+
+    override fun createInitialState() = ImportState.State()
+
+    init {
+        observeImportRunning()
+            .onEach { running -> setState { copy(isImportRunning = running) } }
+            .launchIn(viewModelScope)
+    }
+
+    override fun onEvent(event: ImportState.Event) {
+        when (event) {
+            is ImportState.Event.SourcePicked -> {
+                // The picker can still hand back a source picked before the previous import
+                // started, so the enqueue is guarded here too, not just in the UI.
+                if (currentState.isImportRunning) return
+                val profileId = UUID.randomUUID().toString()
+                enqueueImport(profileId, event.source)
+                // The profile, not its dialog list: an import brings friends, groups, saved
+                // photos and archive media too, and the profile is the one screen that shows all
+                // of it filling in — the dialogs are one tap from there.
+                // Home, not the import screen, is what "back" should reach once the import ran.
+                nav.navigate(Routes.Profile(profileId), PopUpTo(Routes.Home::class))
+            }
+            ImportState.Event.BackClicked -> nav.back()
+        }
+    }
+}
