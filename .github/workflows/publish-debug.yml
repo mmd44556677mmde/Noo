@@ -1,0 +1,23 @@
+name: Publish merged debug APK
+on:
+  push:
+    branches: [arena/31eefa8b-noo]
+    paths: [.github/workflows/publish-debug.yml]
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: VK-DUMP-Reader-debug
+          run-id: 44465799337
+          github-token: ${{ github.token }}
+          path: apk
+      - name: Publish verified PR build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v1.12-debug.1 apk/*.apk --repo "$GITHUB_REPOSITORY" --target 70cad60 --title 'VK DUMP Reader 1.12 — Debug APK' --prerelease --notes 'Debug APK from the verified GitHub Actions build merged in PR #1. This is not a production-signed build.'
