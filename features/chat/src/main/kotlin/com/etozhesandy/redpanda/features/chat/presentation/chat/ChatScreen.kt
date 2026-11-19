@@ -1,0 +1,154 @@
+package com.etozhesandy.redpanda.features.chat.presentation.chat
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.material3.PrimaryScrollableTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.compose.collectAsLazyPagingItems
+import com.etozhesandy.redpanda.core.designsystem.components.BaseScreen
+import com.etozhesandy.redpanda.features.chat.presentation.chat.tabs.audio.AudioTabScreen
+import com.etozhesandy.redpanda.features.chat.presentation.chat.tabs.audio.AudioTabViewModel
+import com.etozhesandy.redpanda.features.chat.presentation.chat.tabs.files.FilesTabScreen
+import com.etozhesandy.redpanda.features.chat.presentation.chat.tabs.files.FilesTabViewModel
+import com.etozhesandy.redpanda.features.chat.R
+import com.etozhesandy.redpanda.features.chat.presentation.chat.tabs.media.MediaTabScreen
+import com.etozhesandy.redpanda.features.chat.presentation.chat.tabs.media.PhotosTabViewModel
+import com.etozhesandy.redpanda.features.chat.presentation.chat.tabs.media.VideosTabViewModel
+import com.etozhesandy.redpanda.features.chat.presentation.chat.tabs.messages.MessagesTabScreen
+import com.etozhesandy.redpanda.features.chat.presentation.chat.tabs.messages.MessagesTabViewModel
+import com.etozhesandy.redpanda.features.chat.presentation.chat.view.ChatTopBar
+import kotlinx.coroutines.launch
+
+private val TAB_TITLES = listOf(
+    R.string.chat_tab_messages,
+    R.string.chat_tab_photos,
+    R.string.chat_tab_videos,
+    R.string.chat_tab_audio,
+    R.string.chat_tab_files,
+)
+
+/**
+ * The frame around the chat's five tabs: a bar, a row of tabs, and a pager.
+ *
+ * It holds no state of its own — every tab is a screen with its own ViewModel, reached through
+ * [hiltViewModel] inside its own page. The pager only composes the page it is showing, so a tab
+ * the user never opens never subscribes to anything.
+ */
+@Composable
+fun ChatScreen(modifier: Modifier = Modifier) {
+    val topBarViewModel: ChatTopBarViewModel = hiltViewModel()
+    val topBarState by topBarViewModel.state.collectAsStateWithLifecycle()
+    val pagerState = rememberCachedPagerState(
+        slot = topBarViewModel.tabSlot,
+        pageCount = { TAB_TITLES.size },
+        initialPage = when {
+            topBarViewModel.targetMessageId != null -> 0
+            else -> topBarViewModel.revealPage ?: topBarViewModel.tabSlot.readTab()
+        },
+    )
+    val coroutineScope = rememberCoroutineScope()
+
+    // Hoisted out of the pager so its state survives page disposal; the slot also survives the
+    // screen being rebuilt after the lock gate removes the navigation composition.
+    val messagesListState = rememberCachedMessagesListState(
+        slot = topBarViewModel.tabSlot,
+        restoreCachedPosition = topBarViewModel.targetMessageId == null,
+    )
+
+    BaseScreen(
+        topBar = { ChatTopBar(state = topBarState, onEvent = topBarViewModel::onEvent) },
+        modifier = modifier,
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            PrimaryScrollableTabRow(
+                selectedTabIndex = pagerState.currentPage,
+                edgePadding = 0.dp,
+            ) {
+                TAB_TITLES.forEachIndexed { index, titleRes ->
+                    Tab(
+                        selected = pagerState.currentPage == index,
+                        onClick = { coroutineScope.launch { pagerState.animateScrollToPage(index) } },
+                        text = { Text(stringResource(titleRes)) },
+                    )
+                }
+            }
+            HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                when (page) {
+                    0 -> MessagesPage(
+                        listState = messagesListState,
+                        targetMessageId = topBarViewModel.targetMessageId,
+                    )
+                    1 -> PhotosPage()
+                    2 -> VideosPage()
+                    3 -> AudioPage()
+                    4 -> FilesPage()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MessagesPage(listState: LazyListState, targetMessageId: String?) {
+    val viewModel: MessagesTabViewModel = hiltViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    MessagesTabScreen(
+        state = state,
+        effect = viewModel.effect,
+        pagingItems = viewModel.pagingMessages.collectAsLazyPagingItems(),
+        listState = listState,
+        targetMessageId = targetMessageId,
+        onEvent = viewModel::onEvent,
+    )
+}
+
+@Composable
+private fun PhotosPage() {
+    val viewModel: PhotosTabViewModel = hiltViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    MediaTabScreen(
+        state = state,
+        effect = viewModel.effect,
+        scrollSlot = viewModel.scrollSlot,
+        emptyText = stringResource(R.string.chat_empty_photos),
+        onEvent = viewModel::onEvent,
+    )
+}
+
+@Composable
+private fun VideosPage() {
+    val viewModel: VideosTabViewModel = hiltViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    MediaTabScreen(
+        state = state,
+        effect = viewModel.effect,
+        scrollSlot = viewModel.scrollSlot,
+        emptyText = stringResource(R.string.chat_empty_videos),
+        onEvent = viewModel::onEvent,
+    )
+}
+
+@Composable
+private fun AudioPage() {
+    val viewModel: AudioTabViewModel = hiltViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    AudioTabScreen(state = state, onEvent = viewModel::onEvent)
+}
+
+@Composable
+private fun FilesPage() {
+    val viewModel: FilesTabViewModel = hiltViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    FilesTabScreen(state = state, effect = viewModel.effect, onEvent = viewModel::onEvent)
+}

@@ -1,0 +1,38 @@
+package com.etozhesandy.redpanda.core.storage.db.attachment
+
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
+import com.etozhesandy.redpanda.core.model.AttachmentType
+
+@Entity(
+    tableName = "attachments",
+    indices = [
+        // A page of messages reads its attachments by message and orders them within it, so the
+        // index serves both and the database sorts nothing.
+        Index(value = ["messageId", "orderInMessage"]),
+        // Every media screen filters by type within one dialog or profile and orders by time;
+        // without these the type filters degrade to a full scan of a profile's attachments. The
+        // trailing orderInMessage is the tie-break the grids sort by, so the index already
+        // delivers the rows in display order. The first serves a single type, the second several
+        // (photos and videos together), where one index per type could not be merged in order.
+        Index(value = ["dialogId", "timestampEpoch", "orderInMessage"]),
+        Index(value = ["dialogId", "type", "timestampEpoch", "orderInMessage"]),
+        Index(value = ["profileId", "type", "timestampEpoch"]),
+        // The archive-folder screens group and filter a profile's files by folder; without this
+        // each of them sorted every attachment of the profile into a temporary B-tree first.
+        Index(value = ["profileId", "sourceFolder", "timestampEpoch"]),
+    ],
+)
+data class AttachmentEntity(
+    @PrimaryKey val id: String,
+    val messageId: String?,
+    val dialogId: String,
+    val profileId: String,
+    val type: AttachmentType,
+    val path: String,
+    val orderInMessage: Int,
+    val timestampEpoch: Long,
+    val caption: String? = null,
+    val sourceFolder: String? = null,
+)
