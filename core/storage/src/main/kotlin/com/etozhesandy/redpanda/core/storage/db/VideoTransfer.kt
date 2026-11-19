@@ -13,6 +13,8 @@ interface VideoTransferDao {
     fun completed(key: String): Boolean?
     @Query("SELECT * FROM video_transfer WHERE `key` = :key")
     fun find(key: String): VideoTransfer?
+    @Query("DELETE FROM video_transfer WHERE `key`=:key")
+    fun delete(key: String)
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun save(value: VideoTransfer)
 }

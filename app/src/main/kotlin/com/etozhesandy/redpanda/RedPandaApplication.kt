@@ -32,6 +32,7 @@ class RedPandaApplication : Application(), Configuration.Provider, ImageLoaderFa
     override fun owner(url: String) = db.videoTransferDao().owner(url).let { listOf(it?.profile, it?.chat, it?.kind) }
     override fun clearThumbnails() { imageLoader.diskCache?.clear(); imageLoader.memoryCache?.clear() }
     override fun thumbnailBytes() = imageLoader.diskCache?.size ?: 0L
+    override fun discardVideo(file: java.io.File) = videos.discard(file)
     override fun videoComplete(key: String) = db.videoTransferDao().completed(key) == true
     @Inject lateinit var videos: VideoDownloadManager
     override suspend fun downloadVideo(url: String, confirmed: Boolean, progress: (Long, Long) -> Unit) = videos.downloadVideo(url, confirmed, progress)
@@ -57,7 +58,7 @@ class RedPandaApplication : Application(), Configuration.Provider, ImageLoaderFa
         // asynchronously rather than read up front to keep DataStore off the cold-start path.
         // Opened here rather than by whichever screen reads first, so that a migration starts at
         // once and the update screen is on for exactly as long as it runs.
-        appScope.launch { databaseOpener.open() }
+        appScope.launch { databaseOpener.open(); com.etozhesandy.redpanda.core.common.net.CacheInventory.trim(this@RedPandaApplication) }
         appScope.launch {
             settingsRepository.settings
                 .map { it.loggingEnabled }

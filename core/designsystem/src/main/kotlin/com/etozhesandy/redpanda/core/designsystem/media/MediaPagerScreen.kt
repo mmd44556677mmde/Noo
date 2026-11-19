@@ -69,13 +69,13 @@ fun <T> MediaPagerScreen(
             userScrollEnabled = !zoom.isZoomed,
             // The neighbours load ahead, so a swipe lands on a ready image rather than on the
             // black frame while it is still being fetched.
-            beyondViewportPageCount = 1,
+            beyondViewportPageCount = 0,
             key = key?.let { itemKey -> { index -> itemKey(items[index]) } },
             modifier = Modifier.fillMaxSize(),
         ) { index ->
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 val isCurrentPage = index == pagerState.currentPage
-                page(items[index], isCurrentPage, if (isCurrentPage) zoom else idleZoom)
+                if (isCurrentPage) page(items[index], true, zoom)
             }
         }
     }

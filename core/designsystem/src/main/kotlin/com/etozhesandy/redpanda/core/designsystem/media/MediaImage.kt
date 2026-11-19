@@ -31,9 +31,17 @@ fun MediaImage(
 ) {
     var state by remember(model) { mutableStateOf<AsyncImagePainter.State>(AsyncImagePainter.State.Empty) }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val local = remember(model) { if (model is String && model.startsWith("http", true)) com.etozhesandy.redpanda.core.common.net.DumpMedia.file(context,model) else null }
+    var available by remember(local) { mutableStateOf(local?.isFile == true) }
+    if (local != null && model is String && !available) {
+        MediaThumbnail(model, com.etozhesandy.redpanda.core.model.AttachmentType.PHOTO, null, { available = local.isFile })
+        return
+    }
+    androidx.compose.runtime.LaunchedEffect(local) { if (local != null) com.etozhesandy.redpanda.core.common.net.CacheInventory.touch(context,local) }
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         AsyncImage(
-            model = if (model is String && model.startsWith("http")) com.etozhesandy.redpanda.core.common.net.DumpMedia.file(androidx.compose.ui.platform.LocalContext.current, model) else model,
+            model = local ?: model,
             contentDescription = null,
             contentScale = ContentScale.Fit,
             onState = { state = it },

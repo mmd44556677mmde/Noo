@@ -71,10 +71,10 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
         ) {
             androidx.compose.material3.TextButton(onClick = { storage = true }) { Text("Storage usage") }
-            var policy by remember { androidx.compose.runtime.mutableStateOf(DumpMedia.policy(context)) }
+            val policy = state.policy
             Text("Remote media", modifier = Modifier.padding(16.dp))
             DumpMedia.Policy.entries.forEach { choice ->
-                androidx.compose.material3.TextButton(onClick = { DumpMedia.setPolicy(context, choice); policy = choice }) {
+                androidx.compose.material3.TextButton(onClick = { onEvent(SettingsState.Event.PolicyChanged(choice)) }) {
                     Text((if (choice == policy) "✓ " else "") + when (choice) {
                         DumpMedia.Policy.WIFI -> "Wi-Fi only"
                         DumpMedia.Policy.ALWAYS -> "Always"

@@ -19,14 +19,20 @@ class VideoDownloadManager @Inject constructor(@ApplicationContext private val c
     private val dao = db.videoTransferDao()
     private val client = DumpMedia.client(context)
     private val locks = Array(32) { Mutex() }
+    private fun lock(key: String) = locks[(key.hashCode() and Int.MAX_VALUE) % locks.size]
+    fun discard(file: File): Boolean {
+        val mutex = lock(file.name)
+        if (!mutex.tryLock()) return false
+        try { if (!file.delete()) return false; dao.delete(file.name); return true } finally { mutex.unlock() }
+    }
     override suspend fun downloadVideo(url: String, confirmed: Boolean, progress: (Long, Long) -> Unit): File = withContext(Dispatchers.IO) {
-        locks[(url.hashCode() and Int.MAX_VALUE) % locks.size].withLock {
-            val key = DumpMedia.file(context, url).name
+        val key = DumpMedia.file(context, url).name
+        lock(key).withLock {
             val file = File(context.cacheDir, "videos/$key")
             file.parentFile!!.mkdirs()
             val row = dao.find(key)
             val offset = file.length()
-            if (file.exists() && row?.complete == true && offset == row.bytes) return@withLock file
+            if (file.exists() && row?.complete == true && offset == row.bytes) { com.etozhesandy.redpanda.core.common.net.CacheInventory.touch(context,file); return@withLock file }
             val request = Request.Builder().url(url).header("Accept-Encoding", "identity").tag(if (confirmed) "confirmed" else null)
             if (offset > 0) {
                 request.header("Range", "bytes=$offset-")

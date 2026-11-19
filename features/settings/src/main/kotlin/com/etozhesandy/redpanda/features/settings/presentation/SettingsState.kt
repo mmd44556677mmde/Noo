@@ -15,6 +15,7 @@ import java.io.File
 object SettingsState {
 
     data class State(
+        val policy: com.etozhesandy.redpanda.core.common.net.DumpMedia.Policy = com.etozhesandy.redpanda.core.common.net.DumpMedia.Policy.WIFI,
         val coilCacheSizeMb: Int = AppSettings.DEFAULT_COIL_CACHE_SIZE_MB,
         val mediaImageWidthDp: Int = AppSettings.DEFAULT_MEDIA_IMAGE_WIDTH_DP,
         val defaultDialogSort: DialogSort = AppSettings.DEFAULT_DIALOG_SORT,
@@ -34,6 +35,7 @@ object SettingsState {
     ) : UiState
 
     sealed interface Event : UiEvent {
+        data class PolicyChanged(val policy: com.etozhesandy.redpanda.core.common.net.DumpMedia.Policy) : Event
         data class CoilCacheSizeChanged(val valueMb: Int) : Event
         data class MediaImageWidthChanged(val widthDp: Int) : Event
         data class DefaultDialogSortSelected(val sort: DialogSort) : Event

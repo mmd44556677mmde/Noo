@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.onEach
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context,
     private val nav: INavigationManager,
     observeSettings: ObserveSettingsUseCase,
     private val updateCoilCacheSize: UpdateCoilCacheSizeUseCase,
@@ -50,6 +51,7 @@ class SettingsViewModel @Inject constructor(
     override fun createInitialState() = SettingsState.State()
 
     init {
+        setState { copy(policy = com.etozhesandy.redpanda.core.common.net.DumpMedia.policy(context)) }
         observeSettings()
             .onEach { settings ->
                 setState {
@@ -91,6 +93,7 @@ class SettingsViewModel @Inject constructor(
 
     override fun onEvent(event: SettingsState.Event) {
         when (event) {
+            is SettingsState.Event.PolicyChanged -> { com.etozhesandy.redpanda.core.common.net.DumpMedia.setPolicy(context,event.policy); setState { copy(policy = event.policy) } }
             is SettingsState.Event.CoilCacheSizeChanged -> launchSafe { updateCoilCacheSize(event.valueMb) }
             is SettingsState.Event.MediaImageWidthChanged -> launchSafe { updateMediaImageWidth(event.widthDp) }
             is SettingsState.Event.DefaultDialogSortSelected -> launchSafe {

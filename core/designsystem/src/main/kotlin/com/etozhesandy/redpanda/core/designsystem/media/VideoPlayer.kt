@@ -92,7 +92,7 @@ private fun LocalVideoPlayer(uri: String, modifier: Modifier, autoPlay: Boolean,
     val context = LocalContext.current
     val player = remember(uri, stream) {
         ExoPlayer.Builder(context).apply {
-            if (stream != null) setMediaSourceFactory(androidx.media3.exoplayer.source.ProgressiveMediaSource.Factory { GrowingVideoSource(stream) })
+            setMediaSourceFactory(androidx.media3.exoplayer.source.ProgressiveMediaSource.Factory { if (stream != null) GrowingVideoSource(stream) else androidx.media3.datasource.FileDataSource() })
         }
             .setSeekBackIncrementMs(SEEK_STEP_MS)
             .setSeekForwardIncrementMs(SEEK_STEP_MS)

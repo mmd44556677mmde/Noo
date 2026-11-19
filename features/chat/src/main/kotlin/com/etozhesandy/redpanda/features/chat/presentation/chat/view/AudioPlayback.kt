@@ -101,7 +101,7 @@ fun rememberAudioPlayback(): AudioPlayback {
         // VK's voice messages are constant-bitrate MP3s without a Xing/Info header; without
         // constant-bitrate seeking the player knows neither their length nor how to seek in them.
         val extractors = DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true)
-        ExoPlayer.Builder(context, DefaultMediaSourceFactory(context, extractors)).build()
+        ExoPlayer.Builder(context, DefaultMediaSourceFactory(androidx.media3.datasource.FileDataSource.Factory(), extractors)).build()
     }
     val playback = remember(player) { AudioPlayback(player) }
 
