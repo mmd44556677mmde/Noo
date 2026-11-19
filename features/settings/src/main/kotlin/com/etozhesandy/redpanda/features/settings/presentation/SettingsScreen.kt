@@ -12,6 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import com.etozhesandy.redpanda.core.common.net.DumpMedia
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -67,6 +68,18 @@ fun SettingsScreen(
         Column(
             modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
         ) {
+            var policy by remember { androidx.compose.runtime.mutableStateOf(DumpMedia.policy(context)) }
+            Text("Remote media", modifier = Modifier.padding(16.dp))
+            DumpMedia.Policy.entries.forEach { choice ->
+                androidx.compose.material3.TextButton(onClick = { DumpMedia.setPolicy(context, choice); policy = choice }) {
+                    Text((if (choice == policy) "✓ " else "") + when (choice) {
+                        DumpMedia.Policy.WIFI -> "Wi-Fi only"
+                        DumpMedia.Policy.ALWAYS -> "Always"
+                        DumpMedia.Policy.ASK -> "Ask"
+                        DumpMedia.Policy.NEVER -> "Never"
+                    })
+                }
+            }
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_profiles_cache)) },
                 supportingContent = {

@@ -26,6 +26,7 @@ android {
 
 dependencies {
     api(project(":core:model"))
+    api(libs.okhttp)
 
     api(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.lifecycle.runtime.ktx)

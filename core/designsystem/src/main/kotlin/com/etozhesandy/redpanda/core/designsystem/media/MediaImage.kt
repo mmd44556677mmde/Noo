@@ -33,7 +33,7 @@ fun MediaImage(
 
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         AsyncImage(
-            model = model,
+            model = if (model is String && model.startsWith("http")) com.etozhesandy.redpanda.core.common.net.DumpMedia.file(androidx.compose.ui.platform.LocalContext.current, model) else model,
             contentDescription = null,
             contentScale = ContentScale.Fit,
             onState = { state = it },

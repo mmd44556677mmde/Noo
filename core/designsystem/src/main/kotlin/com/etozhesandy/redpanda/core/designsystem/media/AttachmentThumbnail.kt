@@ -33,10 +33,10 @@ import com.etozhesandy.redpanda.core.designsystem.R
 import com.etozhesandy.redpanda.core.model.Attachment
 import com.etozhesandy.redpanda.core.model.AttachmentType
 import java.io.File
-import kotlinx.coroutines.delay
-
-private const val MAX_LOAD_RETRIES = 2
-private const val RETRY_DELAY_MS = 1_500L
+import com.etozhesandy.redpanda.core.common.net.DumpMedia
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.*
 
 /**
  * The size is caller-controlled via [modifier] (default 120dp square, used inline in message
@@ -68,12 +68,39 @@ fun MediaThumbnail(
     onClick: () -> Unit,
     modifier: Modifier = Modifier.size(120.dp),
 ) {
+    val context = LocalContext.current
+    val remote = path.startsWith("https://", true) || path.startsWith("http://", true)
+    val cached = remember(path) { if (remote) DumpMedia.file(context, path) else File(path) }
+    var ready by remember(path) { mutableStateOf(cached.isFile) }
+    var busy by remember(path) { mutableStateOf(false) }
+    var ask by remember(path) { mutableStateOf(false) }
+    var failed by remember(path) { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    fun fetch(confirmed: Boolean) {
+        if (busy) return
+        busy = true
+        scope.launch {
+            try { DumpMedia.fetchPhoto(context, path, confirmed); ready = true; failed = false }
+            catch (e: java.io.IOException) { failed = true }
+            finally { busy = false }
+        }
+    }
+    if (ask) AlertDialog(onDismissRequest = { ask = false }, text = { Text("Download this photo?") },
+        confirmButton = { TextButton(onClick = { ask = false; fetch(true) }) { Text("Download") } },
+        dismissButton = { TextButton(onClick = { ask = false }) { Text("Cancel") } })
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick),
+            .clickable {
+                when {
+                    !remote || ready || type != AttachmentType.PHOTO -> onClick()
+                    busy -> Unit
+                    DumpMedia.policy(context) == DumpMedia.Policy.ASK -> ask = true
+                    else -> fetch(false)
+                }
+            },
         contentAlignment = Alignment.Center,
     ) {
         // Deliberately no `else`: this is the one place every attachment tile goes through, so a
@@ -89,32 +116,11 @@ fun MediaThumbnail(
                 // image to fetch, and without this they would render as empty tiles.
                 AttachmentPlaceholder(type, caption, Modifier.matchParentSize())
             } else {
-                val model = if (path.startsWith("http")) path else File(path)
-                var failed by remember(model) { mutableStateOf(false) }
-                var attempt by remember(model) { mutableIntStateOf(0) }
-                // The CDN now and then answers a request with a timeout or a 5xx that a second try
-                // gets past, and a grid fires dozens at once. Only a link that kept failing is
-                // shown as broken; local files have nothing to retry.
-                val canRetry = model is String && attempt < MAX_LOAD_RETRIES
-                LaunchedEffect(failed, attempt) {
-                    if (failed && canRetry) {
-                        delay(RETRY_DELAY_MS * (attempt + 1))
-                        failed = false
-                        attempt++
-                    }
-                }
-                val context = LocalContext.current
-                // Built once per model and attempt: a tile recomposes while the grid scrolls, and
-                // a fresh request each time made Coil re-resolve what it already had in hand.
-                val request = remember(context, model, attempt) {
-                    ImageRequest.Builder(context)
-                        .data(model)
-                        // Kept out of the cache key: a retry is the same picture, only a new attempt.
-                        .setParameter("attempt", attempt, memoryCacheKey = null)
-                        .build()
-                }
+                if (busy) CircularProgressIndicator()
+                if (remote && !ready && !busy && !failed) AttachmentPlaceholder(type, caption, Modifier.matchParentSize())
+                if (!remote || ready)
                 AsyncImage(
-                    model = request,
+                    model = cached,
                     contentDescription = null,
                     // Stickers are transparent artwork sized to their own aspect ratio; cropping
                     // them to a square tile cuts the drawing.
@@ -128,7 +134,7 @@ fun MediaThumbnail(
                 )
                 // A signed link that has since expired answers 404; saying so beats a tile that
                 // looks like it is still loading.
-                if (failed && !canRetry) {
+                if (failed) {
                     Icon(
                         Icons.Default.BrokenImage,
                         contentDescription = stringResource(R.string.attachment_load_failed),
