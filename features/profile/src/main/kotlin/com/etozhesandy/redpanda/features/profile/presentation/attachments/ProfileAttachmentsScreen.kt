@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import com.etozhesandy.redpanda.core.designsystem.media.AttachmentThumbnail
 import com.etozhesandy.redpanda.core.designsystem.components.BaseScreen
 import com.etozhesandy.redpanda.core.designsystem.components.LoadableContent
 import com.etozhesandy.redpanda.core.designsystem.media.MediaGrid
@@ -42,12 +42,7 @@ fun ProfileAttachmentsScreen(
                 imageWidthDp = GRID_IMAGE_WIDTH_DP,
                 state = gridState,
             ) { attachment, tileModifier ->
-                AsyncImage(
-                    model = attachment.path,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = tileModifier.clickable { onEvent(ProfileAttachmentsState.Event.AttachmentClicked(attachment)) },
-                )
+                AttachmentThumbnail(attachment, { onEvent(ProfileAttachmentsState.Event.AttachmentClicked(attachment)) }, tileModifier)
             }
         }
     }

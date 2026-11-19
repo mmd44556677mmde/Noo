@@ -81,7 +81,11 @@ class ImageDownloader @Inject constructor(
      * have this copy the user's whole message history somewhere every other app can read it.
      */
     private fun openSource(source: String): InputStream = when {
-        UrlGuard.isWebUrl(source) -> URL(source).openStream()
+        UrlGuard.isWebUrl(source) -> com.etozhesandy.redpanda.core.common.net.DumpMedia.client(context)
+            .newCall(okhttp3.Request.Builder().url(source).build()).execute().let { response ->
+                if (!response.isSuccessful) { response.close(); throw java.io.IOException("Download failed") }
+                response.body.byteStream()
+            }
         else -> {
             val path = source.removePrefix("file://")
             val file = File(path)

@@ -9,6 +9,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import coil.ImageLoader
 import coil.ImageLoaderFactory
+import coil.imageLoader
 import coil.decode.VideoFrameDecoder
 import coil.disk.DiskCache
 import com.etozhesandy.redpanda.core.common.logging.AppLogger
@@ -26,7 +27,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 @HiltAndroidApp
-class RedPandaApplication : Application(), Configuration.Provider, ImageLoaderFactory, com.etozhesandy.redpanda.core.common.net.VideoTransfers {
+class RedPandaApplication : Application(), Configuration.Provider, ImageLoaderFactory, com.etozhesandy.redpanda.core.common.net.VideoTransfers, com.etozhesandy.redpanda.core.common.net.CacheHost {
+    @Inject lateinit var db: com.etozhesandy.redpanda.core.storage.db.AppDatabase
+    override fun owner(url: String) = db.videoTransferDao().owner(url).let { listOf(it?.profile, it?.chat, it?.kind) }
+    override fun clearThumbnails() { imageLoader.diskCache?.clear(); imageLoader.memoryCache?.clear() }
+    override fun thumbnailBytes() = imageLoader.diskCache?.size ?: 0L
+    override fun videoComplete(key: String) = db.videoTransferDao().completed(key) == true
     @Inject lateinit var videos: VideoDownloadManager
     override suspend fun downloadVideo(url: String, confirmed: Boolean, progress: (Long, Long) -> Unit) = videos.downloadVideo(url, confirmed, progress)
 

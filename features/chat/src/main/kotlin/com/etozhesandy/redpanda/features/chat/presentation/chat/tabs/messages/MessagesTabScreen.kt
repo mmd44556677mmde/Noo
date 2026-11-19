@@ -69,12 +69,12 @@ fun MessagesTabScreen(
     Box(modifier = modifier.fillMaxSize()) {
         MessagesList(
             audioContent = { attachment ->
-                LaunchedEffect(attachment.id) { onEvent(MessagesTabState.Event.AudioShown(attachment)) }
+                LaunchedEffect(attachment.id) { if (!attachment.path.startsWith("http", true)) onEvent(MessagesTabState.Event.AudioShown(attachment)) }
                 val prepared = state.preparedAudio[attachment.id]
                 AudioListItem(
                     attachment = attachment,
                     isPlaying = playback.isPlaying(attachment),
-                    onClick = { playback.toggle(attachment, prepared?.localPath) },
+                    onClick = { if (prepared == null && attachment.path.startsWith("http", true)) onEvent(MessagesTabState.Event.AudioShown(attachment)) else playback.toggle(attachment, prepared?.localPath) },
                     durationMs = prepared?.durationMs,
                     progress = playback.progressOf(attachment, prepared?.durationMs),
                     onSeek = { playback.seekTo(attachment, it) },

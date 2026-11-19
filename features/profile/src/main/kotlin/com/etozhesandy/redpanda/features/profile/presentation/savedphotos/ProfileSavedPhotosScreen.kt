@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import com.etozhesandy.redpanda.core.designsystem.media.MediaThumbnail
 import com.etozhesandy.redpanda.core.designsystem.components.BaseScreen
 import com.etozhesandy.redpanda.core.designsystem.components.LoadableContent
 import com.etozhesandy.redpanda.core.designsystem.media.MediaGrid
@@ -38,12 +38,7 @@ fun ProfileSavedPhotosScreen(
                 imageWidthDp = 100,
                 state = gridState,
             ) { photo, tileModifier ->
-                AsyncImage(
-                    model = photo.url,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = tileModifier.clickable { onEvent(ProfileSavedPhotosState.Event.PhotoClicked(photo)) },
-                )
+                MediaThumbnail(photo.url, com.etozhesandy.redpanda.core.model.AttachmentType.PHOTO, null, { onEvent(ProfileSavedPhotosState.Event.PhotoClicked(photo)) }, tileModifier)
             }
         }
     }

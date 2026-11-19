@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import com.etozhesandy.redpanda.core.designsystem.media.MediaThumbnail
 import com.etozhesandy.redpanda.core.model.SavedPhoto
 import com.etozhesandy.redpanda.features.profile.R
 
@@ -25,12 +25,7 @@ fun SavedPhotosPreviewSection(
         modifier = modifier,
     ) {
         items(photos, key = { it.id }) { photo ->
-            AsyncImage(
-                model = photo.url,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.size(80.dp),
-            )
+            MediaThumbnail(photo.url, com.etozhesandy.redpanda.core.model.AttachmentType.PHOTO, null, onAllClick, Modifier.size(80.dp))
         }
     }
 }

@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import com.etozhesandy.redpanda.core.designsystem.media.AttachmentThumbnail
 import com.etozhesandy.redpanda.core.model.Attachment
 import com.etozhesandy.redpanda.features.profile.R
 
@@ -25,12 +25,7 @@ fun AttachmentsPreviewSection(
         modifier = modifier,
     ) {
         items(attachments, key = { it.id }) { attachment ->
-            AsyncImage(
-                model = attachment.path,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.size(80.dp),
-            )
+            AttachmentThumbnail(attachment, onAllClick, Modifier.size(80.dp))
         }
     }
 }

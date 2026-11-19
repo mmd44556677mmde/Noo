@@ -58,19 +58,17 @@ class AudioRepositoryImpl @Inject constructor(
         val target = File(cacheDir, sha1(url) + "." + url.substringAfterLast('.').substringBefore('?').take(4))
         if (target.length() > 0) return target
 
-        val connection = URL(url).openConnection() as HttpURLConnection
-        try {
-            connection.connectTimeout = TIMEOUT_MS
-            connection.readTimeout = TIMEOUT_MS
-            check(connection.responseCode == HttpURLConnection.HTTP_OK) { "HTTP ${connection.responseCode} for $url" }
-            // Written aside and renamed, so a download cut short is never mistaken for the file.
-            val partial = File(cacheDir, target.name + ".part")
-            connection.inputStream.use { input -> partial.outputStream().use { input.copyTo(it) } }
-            check(partial.renameTo(target)) { "Could not store $url" }
-            return target
-        } finally {
-            connection.disconnect()
+        val request = okhttp3.Request.Builder().url(url).build()
+        com.etozhesandy.redpanda.core.common.net.DumpMedia.client(context).newCall(request).execute().use { response ->
+            check(response.isSuccessful)
+            val partial = File.createTempFile("audio-", ".part", cacheDir)
+            try {
+                partial.outputStream().use { response.body.byteStream().copyTo(it) }
+                check(partial.renameTo(target))
+                com.etozhesandy.redpanda.core.common.net.CacheInventory.record(context, target, url)
+            } finally { partial.delete() }
         }
+        return target
     }
 
     private fun durationOf(file: File): Long? {

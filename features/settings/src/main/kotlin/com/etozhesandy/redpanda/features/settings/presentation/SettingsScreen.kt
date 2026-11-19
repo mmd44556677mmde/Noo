@@ -48,6 +48,8 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    var storage by remember { androidx.compose.runtime.mutableStateOf(false) }
+    if (storage) { StorageUsage { storage = false }; return }
     LaunchedEffect(Unit) {
         effect.collectLatest { current ->
             when (current) {
@@ -68,6 +70,7 @@ fun SettingsScreen(
         Column(
             modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
         ) {
+            androidx.compose.material3.TextButton(onClick = { storage = true }) { Text("Storage usage") }
             var policy by remember { androidx.compose.runtime.mutableStateOf(DumpMedia.policy(context)) }
             Text("Remote media", modifier = Modifier.padding(16.dp))
             DumpMedia.Policy.entries.forEach { choice ->

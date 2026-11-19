@@ -59,6 +59,7 @@ class VideoDownloadManager @Inject constructor(@ApplicationContext private val c
                             }
                             if (total >= 0 && bytes != total) throw IOException("Incomplete response")
                             save(true)
+                            com.etozhesandy.redpanda.core.common.net.CacheInventory.record(context, file, url)
                         } catch (e: Exception) { save(false); throw e }
                     }
                 } finally { cancel.cancel() }

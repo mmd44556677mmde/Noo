@@ -53,6 +53,7 @@ object DumpMedia {
                         tmp.outputStream().use { res.body.byteStream().copyTo(it) }
                     }
                     check(tmp.renameTo(target))
+                    CacheInventory.record(c, target, url)
                 } finally { tmp.delete() }
             }
         }
