@@ -20,4 +20,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create v1.12-debug.1 apk/*.apk --repo "$GITHUB_REPOSITORY" --target 70cad60 --title 'VK DUMP Reader 1.12 — Debug APK' --prerelease --notes 'Debug APK from the verified GitHub Actions build merged in PR #1. This is not a production-signed build.'
+          gh release create v1.12-debug.1 apk/*.apk --repo "$GITHUB_REPOSITORY" --target 70cad604fae9f49e0bc8ab695d5c1af73782fd93 --title 'VK DUMP Reader 1.12 — Debug APK' --prerelease --notes 'Debug APK from the verified GitHub Actions build merged in PR #1. This is not a production-signed build.'
