@@ -26,7 +26,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 @HiltAndroidApp
-class RedPandaApplication : Application(), Configuration.Provider, ImageLoaderFactory {
+class RedPandaApplication : Application(), Configuration.Provider, ImageLoaderFactory, com.etozhesandy.redpanda.core.common.net.VideoTransfers {
+    @Inject lateinit var videos: VideoDownloadManager
+    override suspend fun downloadVideo(url: String, confirmed: Boolean, progress: (Long, Long) -> Unit) = videos.downloadVideo(url, confirmed, progress)
+
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory

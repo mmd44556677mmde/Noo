@@ -53,6 +53,32 @@ private const val SEEK_INDICATOR_TIMEOUT_MS = 600L
 @Composable
 fun VideoPlayer(uri: String, modifier: Modifier = Modifier, autoPlay: Boolean = false) {
     val context = LocalContext.current
+    if (uri.startsWith("https://", true) || uri.startsWith("http://", true)) {
+        if (!autoPlay) return
+        val transfers = context.applicationContext as com.etozhesandy.redpanda.core.common.net.VideoTransfers
+        val ask = com.etozhesandy.redpanda.core.common.net.DumpMedia.policy(context) == com.etozhesandy.redpanda.core.common.net.DumpMedia.Policy.ASK
+        var downloading by remember(uri) { mutableStateOf(!ask) }
+        var percent by remember(uri) { mutableIntStateOf(-1) }
+        var file by remember(uri) { mutableStateOf<File?>(null) }
+        var error by remember(uri) { mutableStateOf(false) }
+        LaunchedEffect(uri, downloading) {
+            if (downloading) try {
+                file = transfers.downloadVideo(uri, ask) { bytes, total -> percent = if (total > 0) (bytes * 100 / total).toInt() else -1 }
+            } catch (e: java.io.IOException) { downloading = false; error = true }
+        }
+        val local = file
+        if (local != null) VideoPlayer(local.absolutePath, modifier, true)
+        else Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            androidx.compose.foundation.layout.Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (downloading) androidx.compose.material3.CircularProgressIndicator()
+                if (percent >= 0) androidx.compose.material3.Text("$percent%", color = Color.White)
+                androidx.compose.material3.TextButton(onClick = { downloading = !downloading; error = false }) {
+                    androidx.compose.material3.Text(if (downloading) "Pause download" else if (error) "Retry download" else "Download / resume")
+                }
+            }
+        }
+        return
+    }
     val player = remember(uri) {
         ExoPlayer.Builder(context)
             .setSeekBackIncrementMs(SEEK_STEP_MS)

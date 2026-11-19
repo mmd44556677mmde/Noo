@@ -19,6 +19,7 @@ import com.etozhesandy.redpanda.core.storage.db.migration.MIGRATION_3_4
 import com.etozhesandy.redpanda.core.storage.db.migration.MIGRATION_4_5
 import com.etozhesandy.redpanda.core.storage.db.migration.MIGRATION_5_6
 import com.etozhesandy.redpanda.core.storage.db.migration.MIGRATION_6_7
+import com.etozhesandy.redpanda.core.storage.db.migration.MIGRATION_7_8
 import com.etozhesandy.redpanda.core.storage.db.profile.ProfileDao
 import com.etozhesandy.redpanda.core.storage.db.savedphoto.SavedPhotoDao
 import dagger.Module
@@ -43,7 +44,7 @@ object StorageModule {
             // time, so a schema change owes them a migration. Every change therefore needs both a
             // bumped version in @Database and a Migration listed here — without one Room refuses
             // to open the database rather than quietly rebuilding it.
-            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
             .addCallback(
                 object : RoomDatabase.Callback() {
                     // Fires once the file is open, which is after any migration has run.
